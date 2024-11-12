@@ -52,22 +52,36 @@ if [ "$2" = 'csci143' ]; then
     ln -s "$bigdata_dir" "/home/$username/bigdata"
 fi
 
-# print the contents of the email to send to the new users
-echo '=================================='
-echo "I've created an account for you on the lambda server." 
-echo 
-echo "your username: $username"
-echo "your password: $password"
-echo
-echo "The server is located at lambda.compute.cmc.edu:5055 inside CMC's VPN.  You should receive separate instructions from the CMC IT staff for logging into the VPN."
-echo ""
-echo "After logging into the VPN, you can login to the lambda server by running the following terminal command:"
-echo
-echo "$ ssh $username@lambda.compute.cmc.edu -p 5055"
-echo
-echo "You will be required to change your password on the first login."
-echo 
-echo "Do not share your password with anyone else.  Sharing of passwords will be treated as an academic integrity violation."
+# compose the email message
+message=$(cat <<EOF
+To: $email
+Subject: lambda server credentials
+
+I've created an account for you on the lambda server.
+
+your username: $username
+your password: $password
+
+The server is located at lambda.compute.cmc.edu:5055 inside CMC's VPN.  You should receive separate instructions from the CMC IT staff for logging into the VPN.
+
+After logging into the VPN, you can login to the lambda server by running the following terminal command:
+
+$ ssh $username@lambda.compute.cmc.edu -p 5055
+
+You will be required to change your password on the first login.
+
+Do not share your password with anyone else.  Sharing of passwords will be treated as an academic integrity violation.
+EOF
+)
+
+# send the email using msmtp
+if ! printf "%s" "$message" | msmtp --account default --read-recipients; then
+    echo "Error: Failed to send email."
+    echo "Make sure the .msmtp.env file exists and contains SMTP_PASSWORD"
+    exit 1
+fi
+
+echo "Email sent successfully to $email."
 
 #echo "Account limitations:"
 #echo " * You currently don't have access to any of the GPUs on the server.  If you need access to the GPUs, let me know and I'll give you permission."
